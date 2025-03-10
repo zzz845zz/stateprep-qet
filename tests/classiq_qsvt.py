@@ -1,3 +1,6 @@
+# Reference: https://docs.classiq.io/latest/qmod-reference/library-reference/open-library-functions/qsvt/qsvt/
+# NOTE: This code uses the latest version of pyqsp.
+
 from typing import Dict, Tuple
 from stateprep_qet.utils import find_angle
 import numpy as np
