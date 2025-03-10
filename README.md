@@ -17,3 +17,10 @@ poetry install                      # install dependencies
 ```bash
 poetry run {python3, python} {file.py}
 ```
+
+Example:
+
+```bash
+poetry run python ./tests/classiq_qsvt.py
+poetry run python ./tests/pennylane_qsvt.py
+```
