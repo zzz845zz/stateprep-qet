@@ -8,15 +8,16 @@ NUM_QUBITS = 2  # U is applied to these qubits
 DEGREE = 11
 FUNC = lambda x: x
 
-INPUT = np.array([0, 1, 0, 0])
-UNITARY = np.array(
-    [
-        [np.sqrt(3 / 16), np.sqrt(13 / 16), 0, 0],
-        [np.sqrt(13 / 16), -np.sqrt(3 / 16), 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1],
-    ]
-)
+INPUT = np.array([np.sqrt(3 / 16), np.sqrt(13 / 16), 0, 0])
+# INPUT = np.array([0, 1, 0, 0])
+# UNITARY = np.array(
+#     [
+#         [np.sqrt(3 / 16), np.sqrt(13 / 16), 0, 0],
+#         [np.sqrt(13 / 16), -np.sqrt(3 / 16), 0, 0],
+#         [0, 0, 1, 0],
+#         [0, 0, 0, 1],
+#     ]
+# )
 
 
 def get_random_unitary(num_qubits, seed=4):
@@ -27,7 +28,11 @@ def get_random_unitary(num_qubits, seed=4):
     unitary = U @ V.T
     A_dim = int(unitary.shape[0] / 2)
     A = unitary[:A_dim, :A_dim]
+    print("A:", A)
     return unitary
+
+
+UNITARY = get_random_unitary(NUM_QUBITS)
 
 
 @qfunc
@@ -38,7 +43,8 @@ def projector_cnot(reg: QNum, aux: QBit) -> None:
 @qfunc
 def main(x: Output[QArray[QBit]], aux: Output[QBit]):
     allocate(1, aux)
-    prepare_state(probabilities=INPUT, bound=0.01, out=x)
+    prepare_amplitudes(amplitudes=INPUT, bound=0.01, out=x)
+    # prepare_state(probabilities=INPUT, bound=0.01, out=x)
 
     phiset, red_phiset, parity = find_angle(FUNC, DEGREE, 1.0)
     qsvt_phases = red_phiset
@@ -75,7 +81,7 @@ def execute_model():
 
     qprog = synthesize(qmod)
     result = execute(qprog).result_value()
-    show(qprog)
+    # show(qprog)
 
     print("state_vector", result.state_vector)
     print("\nparsed_state_vector")
@@ -99,21 +105,28 @@ def execute_model():
     print(d)
     print(values)
     print(x)
-    normalized = measured_poly_values / np.sum(measured_poly_values)
-    normalized_prob = np.abs(measured_poly_values) ** 2 / np.sum(
+    simulated_prob = np.abs(measured_poly_values) ** 2 / np.sum(
         np.abs(measured_poly_values) ** 2
     )
-    print("normalized:", normalized)
-    print("normalized prob:", normalized_prob)
-    print(measured_poly_values)
-    print(INPUT)
-    print(UNITARY)
-    print(FUNC(UNITARY))
-    print(FUNC(UNITARY) @ INPUT)
+    # print("normalized:", normalized)
+    # print(measured_poly_values)
+    ground_truth_prob = np.abs(FUNC(UNITARY) @ INPUT) ** 2
 
-    # normalized
+    print("Input:", INPUT)
+    print("Unitary:", UNITARY)
+    print("A:", UNITARY[: len(UNITARY) // 2, : len(UNITARY) // 2])
+    print("FUNC(UNITARY):", FUNC(UNITARY))
+    print("FUNC(UNITARY) @ INPUT:", FUNC(UNITARY) @ INPUT)
+    print("simulated prob:", simulated_prob)
+    print("ground truth prob:", ground_truth_prob)
 
-    assert np.allclose(normalized_prob, FUNC(UNITARY) @ INPUT, atol=1e-1)
+    # assert the sum of the probabilities is 1
+    assert np.allclose(np.sum(simulated_prob), 1)
+    assert np.allclose(np.sum(ground_truth_prob), 1)
+
+    # assert the probabilities are close to the ground truth
+    assert np.allclose(simulated_prob, ground_truth_prob, atol=1e-2)
+    print("PASSED")
 
 
 if __name__ == "__main__":
