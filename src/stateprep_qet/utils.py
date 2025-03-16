@@ -75,3 +75,24 @@ def verify(unitary: np.ndarray):
     # Calculate the condition number
     kappa = max(1 / np.linalg.svd(A)[1])
     print("kappa:", kappa)
+
+
+def h(f, min, max):
+    """
+    Eq. (3) in https://arxiv.org/pdf/2210.14892
+    """
+    return lambda y: f((max - min) * np.arcsin(y) + min)
+
+
+def h_scale(h):
+    """
+    Maximal value of h(y) in the y interval [0, sin(1)]. (i.e, maximal value of f(x) in the x interval [a, b])
+    """
+    raise NotImplementedError
+
+
+def h_hat(h, h_max):
+    """
+    Eq. (4) in https://arxiv.org/pdf/2210.14892
+    """
+    return lambda y: h(y) / h_max
