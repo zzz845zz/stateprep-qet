@@ -7,10 +7,11 @@ from stateprep_qet.utils import (
     h,
     h_hat,
     h_scale,
-    verify,
 )
 from classiq.execution import ClassiqBackendPreferences, ExecutionPreferences
 from classiq.qmod.symbolic import sin
+
+from stateprep_qet.verifier import verify_result
 
 NUM_QUBITS = 5  # resolution of input x
 F = lambda x: np.tanh(x)  # TODO: Gaussian
@@ -122,7 +123,7 @@ def execute_model():
     result = execute(qprog).result_value()
     # show(qprog)
 
-    verify(result)
+    verify_result(result)
 
 
 if __name__ == "__main__":
