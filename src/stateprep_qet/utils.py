@@ -98,6 +98,49 @@ def h_hat(h, h_max):
     return lambda y: h(y) / h_max
 
 
+def discretized_l2_norm(f, N, min, max):
+    """
+    Compute the discretized L2-norm of the function f over the interval [a, b] with N points.
+
+    Eq. (6) in https://arxiv.org/pdf/2210.14892
+
+    Args:
+        f (function): The function to evaluate.
+        N (int): The number of discretization points.
+        min (float): The start of the interval.
+        max (float): The end of the interval.
+
+    Returns:
+        float: The discretized L2-norm of the function.
+    """
+    x = np.linspace(min, max, N)
+    f_values = f(x)
+    l2_norm = np.sqrt((max - min) / N * np.sum(np.abs(f_values) ** 2))
+    return l2_norm
+
+
+def l2_norm_filling_fraction(f, N, min, max):
+    """
+    Compute the L2-norm filling-fraction of the function f over the interval [a, b] with N points.
+
+    Eq. (7) in https://arxiv.org/pdf/2210.14892
+
+    Args:
+        f (function): The function to evaluate.
+        N (int): The number of discretization points.
+        min (float): The start of the interval.
+        max (float): The end of the interval.
+
+    Returns:
+        float: The L2-norm filling-fraction of the function.
+    """
+    l2_norm_discretized = discretized_l2_norm(f, N, min, max)
+    f_max = np.max(np.abs(f(np.linspace(min, max, N))))
+    # l2_norm_continuous = np.sqrt(np.trapz(np.abs(f(np.linspace(a, b, 1000))) ** 2, np.linspace(a, b, 1000)))
+    filling_fraction = l2_norm_discretized / np.sqrt((max - min) * f_max**2)
+    return filling_fraction
+
+
 def fidelity(state1, state2):
     """Compute the fidelity between two states.
 
