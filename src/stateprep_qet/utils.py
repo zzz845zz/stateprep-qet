@@ -96,3 +96,24 @@ def h_hat(h, h_max):
     Eq. (4) in https://arxiv.org/pdf/2210.14892
     """
     return lambda y: h(y) / h_max
+
+
+def fidelity(state1, state2):
+    """Compute the fidelity between two states.
+
+    Args:
+        state1 (np.ndarray): list of amplitudes of state 1
+        state2 (np.ndarray): list of amplitudes of state 2
+
+    Returns:
+        float: fidelity between state
+    """
+    return np.abs(np.dot(state1.conj().T, state2)) ** 2
+
+
+def amplification_phi():
+    raise NotImplementedError
+
+
+def amplification_round():
+    raise NotImplementedError

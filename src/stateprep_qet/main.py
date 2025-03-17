@@ -1,6 +1,8 @@
 import numpy as np
 from classiq import *
 from stateprep_qet.utils import (
+    amplification_phi,
+    amplification_round,
     find_angle,
     h,
     h_hat,
@@ -35,15 +37,22 @@ def u_f(
     x: Output[QNum],
     a1: Output[QNum],
     a2: Output[QNum],
-    a3: Output[QNum],
-    qsvt_aux: Output[QBit],
+    a3: Output[QNum],  # NOTE: a3 is unnecessary if f^{\tilde} has definite parity
 ):
+    """u_{f^{\tilde}} circuit for state preparation using QET (more generally, QSVT)
+
+    Args:
+        x (Output[QNum]): _description_
+        a1 (Output[QNum]): _description_
+        a2 (Output[QNum]): _description_
+        a3 (Output[QNum]): _description_
+    """
+
+    # Get phase angles for QSVT
     phiset, red_phiset, parity = find_angle(POLY_FUNC, POLY_DEGREE, POLY_MAX_SCALE)
     phase_angles = phiset
 
-    # TODO: Construct QSVT circuit using u_sin and phase_angles
-
-    raise NotImplementedError("TODO")
+    raise NotImplementedError("TODO: Construct u_f using u_sin and phase_angles")
 
 
 @qfunc
@@ -53,14 +62,25 @@ def u_amplification(
     a2: Output[QNum],
     a3: Output[QNum],
     a4: Output[QNum],
-    qsvt_aux: Output[QBit],
 ):
-    # Construct equal superposition of all states
-    hadamard_transform(x)
+    """Amplification circuit for state preparation using QSVT
 
-    # TODO: Construct full circuit by attaching amplitude amplification technique to u_f
+    Args:
+        x (Output[QNum]): _description_
+        a1 (Output[QNum]): _description_
+        a2 (Output[QNum]): _description_
+        a3 (Output[QNum]): _description_
+        a4 (Output[QNum]): _description_
 
-    raise NotImplementedError("TODO")
+    Raises:
+        NotImplementedError: _description_
+    """
+
+    # TODO: calculate phi, round
+    phi = amplification_phi()
+    round = amplification_round()
+
+    raise NotImplementedError
 
 
 @qfunc
