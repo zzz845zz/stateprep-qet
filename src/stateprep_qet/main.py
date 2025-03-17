@@ -56,7 +56,7 @@ def u_f(
 
 
 @qfunc
-def u_amplification(
+def u_amp(
     x: Output[QNum],
     a1: Output[QNum],
     a2: Output[QNum],
@@ -80,6 +80,9 @@ def u_amplification(
     phi = amplification_phi()
     round = amplification_round()
 
+    # TODO: we may use classiq's "exact amplitude amplificaiton" API instead of implementing it manually
+    # link: https://docs.classiq.io/latest/qmod-reference/api-reference/functions/open_library/amplitude_amplification/?h=amplit#classiq.open_library.functions.amplitude_amplification.exact_amplitude_amplification
+
     raise NotImplementedError
 
 
@@ -99,7 +102,7 @@ def main(
     allocate(1, a4)
     allocate(1, qsvt_aux)
 
-    u_amplification(x, a1, a2, a3, a4, qsvt_aux)
+    u_amp(x, a1, a2, a3, a4, qsvt_aux)
 
 
 def execute_model():
