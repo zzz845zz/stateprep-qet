@@ -3,35 +3,64 @@ import numpy as np
 import pyqsp
 from pyqsp import angle_sequence, response
 from pyqsp.poly import polynomial_generators, PolyTaylorSeries
+from pyqsp.angle_sequence import QuantumSignalProcessingPhases
 from typing import Dict
 
 
-def find_angle(func, polydeg, max_scale):
+def find_angle(func, polydeg, max_scale, encoding="amplitude"):
     """
     With PolyTaylorSeries class, compute Chebyshev interpolant to degree
     'polydeg' (using twice as many Chebyshev nodes to prevent aliasing).
     """
-    poly = PolyTaylorSeries().taylor_series(
-        func=func,
-        degree=polydeg,
+
+    if encoding == "amplitude":
+        phiset = compute_qsvt_phases(poly=func, degree=polydeg, max_scale=max_scale)
+        return phiset
+    elif encoding == "imaginary":
+        # Compute full phases (and reduced phases, parity) using symmetric QSP.
+        poly = PolyTaylorSeries().taylor_series(
+            func=func,
+            degree=polydeg,
+            max_scale=max_scale,
+            chebyshev_basis=True,
+            cheb_samples=2 * polydeg,
+        )
+
+        (phiset, red_phiset, parity) = angle_sequence.QuantumSignalProcessingPhases(
+            poly, method="sym_qsp", chebyshev_basis=True
+        )
+        # (phiset) = angle_sequence.QuantumSignalProcessingPhases(poly, method="laurent")
+
+        # true_func = lambda x: max_scale * func(x)  # For error, include scale.
+        # response.PlotQSPResponse(
+        #     phiset, pcoefs=poly, target=true_func, sym_qsp=True, simul_error_plot=True
+        # )
+
+        return phiset, red_phiset, parity
+    else:
+        raise ValueError("Invalid encoding type.")
+
+
+def adjust_qsvt_conventions(phases: np.ndarray, degree: int) -> np.ndarray:
+    phases = np.array(phases)
+    phases = phases - np.pi / 2
+    phases[0] = phases[0] + np.pi / 4
+    phases[-1] = phases[-1] + np.pi / 2 + (2 * degree - 1) * np.pi / 4
+
+    # verify conventions. minus is due to exp(-i*phi*z) in qsvt in comparison to qsp
+    return -2 * phases
+
+
+def compute_qsvt_phases(poly, degree, max_scale):
+    chebyshev_poly = PolyTaylorSeries().taylor_series(
+        func=poly,
+        degree=degree,
         max_scale=max_scale,
-        chebyshev_basis=True,
-        cheb_samples=2 * polydeg,
     )
-    print("poly:", poly)
-    print("poly.coeffs:", poly.coef)
-
-    # Compute full phases (and reduced phases, parity) using symmetric QSP.
-    (phiset, red_phiset, parity) = angle_sequence.QuantumSignalProcessingPhases(
-        poly, method="sym_qsp", chebyshev_basis=True
+    phases = QuantumSignalProcessingPhases(
+        chebyshev_poly, signal_operator="Wx", method="laurent", measurement="x"
     )
-
-    # true_func = lambda x: max_scale * func(x)  # For error, include scale.
-    # response.PlotQSPResponse(
-    #     phiset, pcoefs=poly, target=true_func, sym_qsp=True, simul_error_plot=True
-    # )
-
-    return phiset, red_phiset, parity
+    return adjust_qsvt_conventions(phases, degree).tolist()
 
 
 def get_random_unitary(num_qubits, seed=4):

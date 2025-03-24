@@ -1,13 +1,18 @@
 from typing import Dict
+from matplotlib import pyplot as plt
 import numpy as np
 from classiq import *
 from stateprep_qet.utils import amp_to_prob, find_angle, h, h_hat, h_scale, normalize
 from classiq.execution import ClassiqBackendPreferences, ExecutionPreferences
 from classiq.qmod.symbolic import sin, cos
+from pyqsp.angle_sequence import QuantumSignalProcessingPhases
+from pyqsp.poly import polynomial_generators, PolyTaylorSeries
 
 NUM_QUBITS = 5  # U is applied to these qubits
 POLY_DEGREE = 33
-POLY_FUNC = h_hat(h=h(f=lambda x: np.tanh(x), min=0, max=1), h_max=np.tanh(1))
+MIN = 0
+MAX = 5
+POLY_FUNC = h_hat(h=h(f=lambda x: np.tanh(x), min=MIN, max=MAX), h_max=np.tanh(5))
 POLY_MAX_SCALE = 1  # TODO: is it correct?
 # POLY_MAX_SCALE = h_scale(h) # TODO
 
@@ -33,7 +38,7 @@ def main(x: Output[QNum], ind: Output[QNum], aux: Output[QBit]):
     hadamard_transform(x)
 
     # Apply QSVT
-    phiset, red_phiset, parity = find_angle(POLY_FUNC, POLY_DEGREE, POLY_MAX_SCALE)
+    phiset = find_angle(POLY_FUNC, POLY_DEGREE, POLY_MAX_SCALE, encoding="amplitude")
     full_reg = QArray[QBit]("full_reg")
     bind([ind, x], full_reg)
     qsvt(
@@ -92,11 +97,22 @@ def execute_model():
 
     simulated = parse_qsvt_results(result)
     expected = normalize(
-        [amp_to_prob(np.tanh(x / 2**NUM_QUBITS)) for x in range(2**NUM_QUBITS)]
+        [
+            amp_to_prob(np.tanh((MAX - MIN) * x / 2**NUM_QUBITS) + MIN)
+            for x in range(2**NUM_QUBITS)
+        ]
     )
 
     print("simulated prob:", np.round(simulated, 5))
     print("expected prob:", np.round(expected, 5))
+
+    x = np.linspace(MIN, MAX, 2**NUM_QUBITS)
+    plt.scatter(x, simulated, label="measured", c="g")
+    plt.plot(x, expected, label="target")
+    plt.xlabel(r"$x$")
+    plt.ylabel(r"$POLY(x)$")
+    plt.legend()
+    plt.show()
 
     # assert the probabilities sum to 1
     assert np.allclose(np.sum(simulated), 1)
