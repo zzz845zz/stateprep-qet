@@ -56,6 +56,8 @@ def compute_qsvt_phases(poly, degree, max_scale):
         func=poly,
         degree=degree,
         max_scale=max_scale,
+        chebyshev_basis=True,
+        cheb_samples=degree,
     )
     phases = QuantumSignalProcessingPhases(
         chebyshev_poly, signal_operator="Wx", method="laurent", measurement="x"

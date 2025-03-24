@@ -98,7 +98,7 @@ def execute_model():
     simulated = parse_qsvt_results(result)
     expected = normalize(
         [
-            amp_to_prob(np.tanh((MAX - MIN) * x / 2**NUM_QUBITS) + MIN)
+            amp_to_prob(np.tanh(((MAX - MIN) * x / 2**NUM_QUBITS) + MIN))
             for x in range(2**NUM_QUBITS)
         ]
     )
