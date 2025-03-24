@@ -14,7 +14,7 @@ from classiq.execution import ClassiqBackendPreferences, ExecutionPreferences
 from classiq.qmod.symbolic import sin
 
 
-NUM_QUBITS = 8  # resolution of input x
+NUM_QUBITS = 4  # resolution of input x
 EXP_RATE = 1  # decay rate of the Gaussian
 
 F = lambda x: np.exp(-EXP_RATE * (x**2))  # Gaussian
@@ -97,7 +97,6 @@ def parse_qsvt_results(result) -> Dict:
         if (
             parsed_state["a1"] == 0
             and parsed_state["a2_qsvt"] == 0
-            # and parsed_state["a3_qsvt"] == 0  # TODO: check if this is correct
             and np.linalg.norm(parsed_state.amplitude) > 1e-10
         ):
             amps[parsed_state["x"]].append(parsed_state.amplitude)
