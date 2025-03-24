@@ -94,6 +94,7 @@ def parse_qsvt_results(result) -> Dict:
     amps: Dict = {x: [] for x in range(2**NUM_QUBITS)}
 
     for parsed_state in result.parsed_state_vector:
+        # NOTE: amplify가 잘 된다면 "a1"==0, "a2"==0 주석처리하고도 결과 잘 나와야함.
         if (
             parsed_state["a1"] == 0
             and parsed_state["a2_qsvt"] == 0
