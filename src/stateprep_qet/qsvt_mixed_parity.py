@@ -111,5 +111,5 @@ def my_qsvt(
         ),
     )
 
-    H(aux)
-    H(aux2)  # TODO: need this?
+    # H(aux)
+    # H(aux2)  # TODO: need this?

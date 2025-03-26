@@ -94,18 +94,14 @@ def state_prep(reg: QArray[QBit]):
     # reg[0:NUM_QUBITS]: x
     # reg[NUM_QUBITS]: a1
     # reg[NUM_QUBITS + 1]: a2
+    # reg[NUM_QUBITS + 2]: a3
     hadamard_transform(reg[0:NUM_QUBITS])
-    # u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1])
     u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1], reg[NUM_QUBITS + 2])
 
 
 @qfunc
 def check_block(a: QNum, res: QBit):
-    # mark if a1 == 0
-    # a = QNum(size=2)
-    # bind([a1, a2, a3], a)
     res ^= a == 0
-    # bind(a, [a1, a2, a3])
 
 
 @qfunc
@@ -116,7 +112,9 @@ def u_amp(
     a3: QBit,
 ):
     #  amp = 0.5 * l2_norm_filling_fraction(f=F, N=2**NUM_QUBITS, min=0, max=1)
-    amp = 0.5597575631451602
+    # amp = 0.5597575631451602
+    # amp = 0.5744795873171386
+    amp = 0.48745219705778786
     print("amp:", amp)
     # assert np.allclose(amp, 0.5 * 0.64, atol=1e-2)
 
@@ -126,11 +124,9 @@ def u_amp(
     exact_amplitude_amplification(
         amplitude=amp,
         oracle=lambda _reg: phase_oracle(
-            check_block, _reg[NUM_QUBITS : NUM_QUBITS + 2]
+            check_block, _reg[NUM_QUBITS : NUM_QUBITS + 3]
         ),
-        # oracle=lambda _reg: None,
         space_transform=lambda _reg: state_prep(_reg),
-        # space_transform=lambda _reg: hadamard_transform(reg[0:NUM_QUBITS]); u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1])
         packed_qvars=reg,
     )
 

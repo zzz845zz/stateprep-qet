@@ -13,6 +13,7 @@ dependencies = [
     "pyqsp (>=0.2.0,<0.3.0)",
     "pennylane (>=0.40.0,<0.41.0)",
     "httplib2 (>=0.22.0,<0.23.0)",
+    "pyqt6 (>=6.8.1,<7.0.0)",
 ]
 
 [tool.poetry]

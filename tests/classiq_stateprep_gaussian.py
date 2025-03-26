@@ -98,6 +98,21 @@ def parse_qsvt_results(result) -> Dict:
         if (
             parsed_state["a1"] == 0
             and parsed_state["a2_qsvt"] == 0
+            and parsed_state["a3_qsvt"] == 1
+            and np.linalg.norm(parsed_state.amplitude) > 1e-10
+        ):
+            amps[parsed_state["x"]].append(parsed_state.amplitude)
+    # simulated_prob = normalize([amp_to_prob(amp) for amp in amps.values()])
+    simulated_prob = normalize([amp_to_prob(sum(amp)) for amp in amps.values()])
+    print("a3_qsvt=1 (odd):", [amp for amp in amps.values()])
+
+    amps: Dict = {x: [] for x in range(2**NUM_QUBITS)}
+    for parsed_state in result.parsed_state_vector:
+        # NOTE: amplify가 잘 된다면 "a1"==0, "a2"==0 주석처리하고도 결과 잘 나와야함.
+        if (
+            parsed_state["a1"] == 0
+            and parsed_state["a2_qsvt"] == 0
+            and parsed_state["a3_qsvt"] == 0
             and np.linalg.norm(parsed_state.amplitude) > 1e-10
         ):
             amps[parsed_state["x"]].append(parsed_state.amplitude)
@@ -107,7 +122,25 @@ def parse_qsvt_results(result) -> Dict:
     # - (x=0, a3_qsvt=0)에는 x=0 일 때 even polynomial의 amplitude가 들어있음.
     # - (x=0, a3_qsvt=1)에는 x=0 일 때 odd polynomial의 amplitude가 들어있음.
     # => sum(amp) 해준 뒤 처리
+    a1 = np.sum([amp for amp in amps.values()])
+    print("a1:", a1)
+    print("sqrt(a1):", np.sqrt(a1))
+    # simulated_prob = normalize([amp_to_prob(amp) for amp in amps.values()])
     simulated_prob = normalize([amp_to_prob(sum(amp)) for amp in amps.values()])
+    print("a3_qsvt=0 (even):", [amp for amp in amps.values()])
+
+    # print(
+    #     "unnormlaized simulated prob:",
+    #     sum([amp_to_prob(sum(amp)) for amp in amps.values()]),
+    # )
+    # print(
+    #     "sqrt(unnormalized simulated prob):",
+    #     np.sqrt(sum([amp_to_prob(sum(amp)) for amp in amps.values()])),
+    # )
+    # a1: 0.23760964441646443
+    # sqrt(a1): 0.48745219705778786
+    # unnormlaized simulated prob: 0.23760964441646443
+    # sqrt(unnormalized simulated prob): 0.48745219705778786
     assert np.allclose(np.sum(simulated_prob), 1)
     return simulated_prob
 
