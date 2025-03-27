@@ -239,8 +239,8 @@ def get_Maximum(a,b,mean=0.0,sigma=1.0):
     X=np.array([x1,x2,x3])
 
     MAX=norm.pdf(X,mean,sigma)
-    print(X)
-    print(MAX)
+    #print(X)
+    #print(MAX)
 
     MAX=max(MAX)
 
