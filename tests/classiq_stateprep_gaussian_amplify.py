@@ -87,6 +87,7 @@ def u_f(
         aux2=a3_qsvt,
     )
     bind(full_reg, [a1, x])
+    H(a3_qsvt)
 
 
 @qfunc
@@ -94,18 +95,14 @@ def state_prep(reg: QArray[QBit]):
     # reg[0:NUM_QUBITS]: x
     # reg[NUM_QUBITS]: a1
     # reg[NUM_QUBITS + 1]: a2
+    # reg[NUM_QUBITS + 2]: a3
     hadamard_transform(reg[0:NUM_QUBITS])
-    # u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1])
     u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1], reg[NUM_QUBITS + 2])
 
 
 @qfunc
 def check_block(a: QNum, res: QBit):
-    # mark if a1 == 0
-    # a = QNum(size=2)
-    # bind([a1, a2, a3], a)
     res ^= a == 0
-    # bind(a, [a1, a2, a3])
 
 
 @qfunc
@@ -117,6 +114,8 @@ def u_amp(
 ):
     #  amp = 0.5 * l2_norm_filling_fraction(f=F, N=2**NUM_QUBITS, min=0, max=1)
     amp = 0.5597575631451602
+    # amp = 0.5744795873171386
+    # amp = 0.48745219705778786
     print("amp:", amp)
     # assert np.allclose(amp, 0.5 * 0.64, atol=1e-2)
 
@@ -126,11 +125,9 @@ def u_amp(
     exact_amplitude_amplification(
         amplitude=amp,
         oracle=lambda _reg: phase_oracle(
-            check_block, _reg[NUM_QUBITS : NUM_QUBITS + 2]
+            check_block, _reg[NUM_QUBITS : NUM_QUBITS + 3]
         ),
-        # oracle=lambda _reg: None,
         space_transform=lambda _reg: state_prep(_reg),
-        # space_transform=lambda _reg: hadamard_transform(reg[0:NUM_QUBITS]); u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1])
         packed_qvars=reg,
     )
 
@@ -154,10 +151,10 @@ def parse_qsvt_results(result) -> Dict:
     for parsed_state in result.parsed_state_vector:
         # NOTE: amplify가 잘 된다면 "a1"==0, "a2"==0 주석처리하고도 결과 잘 나와야함.
         if (
-            # parsed_state["a1"] == 0
-            # and parsed_state["a2_qsvt"] == 0
-            np.linalg.norm(parsed_state.amplitude)
-            > 1e-10
+            parsed_state["a1"] == 0
+            and parsed_state["a2_qsvt"] == 0
+            and parsed_state["a3_qsvt"] == 0
+            and np.linalg.norm(parsed_state.amplitude) > 1e-10
         ):
             amps[parsed_state["x"]].append(parsed_state.amplitude)
 
@@ -189,7 +186,7 @@ def execute_model():
 
     qprog = synthesize(qmod)
     result = execute(qprog).result_value()
-    # show(qprog)
+    show(qprog)
 
     x = np.linspace(MIN, MAX, 2**NUM_QUBITS)
     simulated = parse_qsvt_results(result)
