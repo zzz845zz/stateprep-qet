@@ -197,7 +197,7 @@ def amplification_round():
 
 
 
-def squared_gaussian_integral(a, b, sigma=1.0):
+def squared_gaussian_integral(a, b, mean=0.0, sigma=1.0):
     """
     Computes the integral of f(x)^2 from a to b,
     where f(x) is the Gaussian PDF with mean=0 and std=sigma.
@@ -205,7 +205,7 @@ def squared_gaussian_integral(a, b, sigma=1.0):
     prefactor = 1 / (2 * np.pi * sigma**2)
 
     def integrand(x):
-        return prefactor * np.exp(-x**2 / sigma**2)
+        return prefactor * np.exp(-(x-mean)**2 / sigma**2)
 
     result, _ = quad(integrand, a, b)
     return result
@@ -248,8 +248,14 @@ def get_Maximum(a,b,mean=0.0,sigma=1.0):
   
 
 def get_Amplitude_Gaussian(a,b,mean=0.0,sigma=1.0):
-    Numerator=np.sqrt(get_Integral(a,b,sigma=1.0,mean=0.0))
-    Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean=0.0,sigma=1.0)
+    Numerator=np.sqrt(get_Integral(a,b,sigma,mean))
+    Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean,sigma)
 
     return Numerator/Denominator
 
+
+def get_Amplitude_Gaussian_2(a,b,mean=0.0,sigma=1.0):
+    Numerator=np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
+    Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean,sigma)
+
+    return Numerator/Denominator
