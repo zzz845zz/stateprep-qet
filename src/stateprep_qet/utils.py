@@ -6,6 +6,8 @@ from pyqsp.poly import polynomial_generators, PolyTaylorSeries
 from pyqsp.angle_sequence import QuantumSignalProcessingPhases
 from typing import Dict
 
+from scipy.stats import norm
+from scipy.integrate import quad
 
 def find_angle(func, polydeg, max_scale, encoding="amplitude"):
     """
@@ -191,3 +193,63 @@ def amplification_phi():
 
 def amplification_round():
     raise NotImplementedError
+
+
+
+
+def squared_gaussian_integral(a, b, sigma=1.0):
+    """
+    Computes the integral of f(x)^2 from a to b,
+    where f(x) is the Gaussian PDF with mean=0 and std=sigma.
+    """
+    prefactor = 1 / (2 * np.pi * sigma**2)
+
+    def integrand(x):
+        return prefactor * np.exp(-x**2 / sigma**2)
+
+    result, _ = quad(integrand, a, b)
+    return result
+
+
+
+
+
+def get_Integral(a,b,sigma=1.0,mean=0.0):
+    x2=np.sqrt(2)*b/sigma
+    x1=np.sqrt(2)*a/sigma
+
+    coeff=1.0/(2*sigma*np.sqrt(np.pi))
+    term=coeff*(norm.cdf(x2,loc=mean,scale=sigma)-norm.cdf(x1,loc=mean,scale=sigma))
+
+    return term
+
+
+def get_Maximum(a,b,mean=0.0,sigma=1.0):
+    x1=a
+    x2=b
+
+    x3=0
+
+    if(a<mean and b>mean):
+        x3=mean
+    
+    else:
+        x3=a
+
+    X=np.array([x1,x2,x3])
+
+    MAX=norm.pdf(X,mean,sigma)
+    print(X)
+    print(MAX)
+
+    MAX=max(MAX)
+
+    return MAX
+  
+
+def get_Amplitude_Gaussian(a,b,mean=0.0,sigma=1.0):
+    Numerator=np.sqrt(get_Integral(a,b,sigma=1.0,mean=0.0))
+    Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean=0.0,sigma=1.0)
+
+    return Numerator/Denominator
+
