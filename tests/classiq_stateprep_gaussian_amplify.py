@@ -14,7 +14,7 @@ from classiq.execution import ClassiqBackendPreferences, ExecutionPreferences
 from classiq.qmod.symbolic import sin
 
 
-NUM_QUBITS = 4  # resolution of input x
+NUM_QUBITS = 8  # resolution of input x
 EXP_RATE = 1  # decay rate of the Gaussian
 
 F = lambda x: np.exp(-EXP_RATE * (x**2))  # Gaussian
@@ -112,12 +112,8 @@ def u_amp(
     a2: QBit,
     a3: QBit,
 ):
-    #  amp = 0.5 * l2_norm_filling_fraction(f=F, N=2**NUM_QUBITS, min=0, max=1)
     amp = 0.5597575631451602
-    # amp = 0.5744795873171386
-    # amp = 0.48745219705778786
     print("amp:", amp)
-    # assert np.allclose(amp, 0.5 * 0.64, atol=1e-2)
 
     reg = QArray[QBit]("full_reg")
     bind([x, a1, a2, a3], reg)
@@ -158,15 +154,11 @@ def parse_qsvt_results(result) -> Dict:
         ):
             amps[parsed_state["x"]].append(parsed_state.amplitude)
 
-    # NOTE:
-    # e.g.
-    # - (x=0, a3_qsvt=0)에는 x=0 일 때 even polynomial의 amplitude가 들어있음.
-    # - (x=0, a3_qsvt=1)에는 x=0 일 때 odd polynomial의 amplitude가 들어있음.
-    # => sum(amp) 해준 뒤 처리
-
-    # simulated_prob = normalize([amp_to_prob(sum(amp)) for amp in amps.values()])
-    simulated_prob = [amp_to_prob(sum(amp)) for amp in amps.values()]
+    # NOTE: amp에는 amplify에 임시적으로 쓰인 보조 큐비트의 확률진폭도 들어있을 수 있음. (e.g. (x=0, aux=0), (x=0, aux=1))
+    simulated_prob = [amp_to_prob(amp) for amp in amps.values()]
     print("np.sum(simulated_prob):", np.sum(simulated_prob))
+    # np.sum(simulated_prob): 0.7892557498377792
+
     # assert np.allclose(np.sum(simulated_prob), 1)
     return simulated_prob
 
