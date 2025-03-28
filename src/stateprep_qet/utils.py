@@ -248,7 +248,7 @@ def get_Amplitude_Gaussian_Original(a,b,mean=0.0,sigma=1.0):
 
     return Numerator/(Denominator*2)
 
-def get_Amplitude_Gaussian(a,b,mean=0.0,sigma=1.0):
+def get_Amplitude_Gaussian_Fixed(a,b,mean=0.0,sigma=1.0):
     Numerator=np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
     Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean,sigma)
 
