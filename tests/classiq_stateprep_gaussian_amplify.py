@@ -1,3 +1,4 @@
+import argparse
 from typing import Dict
 from matplotlib import pyplot as plt
 import numpy as np
@@ -28,6 +29,8 @@ POLY_MAX_SCALE = 1
 
 POLY_EVEN = lambda x: (POLY_FUNC(x) + POLY_FUNC(-x))
 POLY_ODD = lambda x: (POLY_FUNC(x) - POLY_FUNC(-x))
+
+AMPLITUDE = 0.5597575631451602
 
 
 @qfunc
@@ -112,14 +115,14 @@ def u_amp(
     a2: QBit,
     a3: QBit,
 ):
-    amp = 0.5597575631451602
-    print("amp:", amp)
+    # amp = 0.5597575631451602
+    print("amp:", AMPLITUDE)
 
     reg = QArray[QBit]("full_reg")
     bind([x, a1, a2, a3], reg)
 
     exact_amplitude_amplification(
-        amplitude=amp,
+        amplitude=AMPLITUDE,
         oracle=lambda _reg: phase_oracle(
             check_block, _reg[NUM_QUBITS : NUM_QUBITS + 3]
         ),
@@ -207,4 +210,10 @@ def execute_model():
 
 
 if __name__ == "__main__":
+    # input amplitude paramter
+    parse = argparse.ArgumentParser()
+    parse.add_argument("--amp", type=float, default=0.5597575631451602)
+
+    amp = parse.parse_args().amp
+    AMPLITUDE = amp
     execute_model()
