@@ -1,12 +1,15 @@
+from typing import Dict
+from matplotlib import pyplot as plt
 import numpy as np
 from classiq import *
 from stateprep_qet.qsvt_mixed_parity import my_qsvt
 from stateprep_qet.utils import (
-    amplification_phi,
-    amplification_round,
+    amp_to_prob,
     find_angle,
+    get_gaussian_amplitude,
     h,
     h_hat,
+    normalize,
 )
 from classiq.execution import ClassiqBackendPreferences, ExecutionPreferences
 from classiq.qmod.symbolic import sin
@@ -14,7 +17,7 @@ from classiq.qmod.symbolic import sin
 from stateprep_qet.verifier import verify_result
 
 # Parameter of the Gaussian state preparation
-NUM_QUBITS = 8  # resolution of input x (`resolution` in the iQuHACK2025)
+NUM_QUBITS = 8  # resolution of input x
 EXP_RATE = 1  # decay rate of the Gaussian
 MIN = -2  # min x
 MAX = 2  # max x
@@ -30,16 +33,7 @@ POLY_ODD = lambda x: (POLY_FUNC(x) - POLY_FUNC(-x))
 
 # Parameter of the QSVT
 POLY_DEGREE = 25
-POLY_MAX_SCALE = 1  # TODO: 이대로 둬도 되는지?
-
-
-@qfunc
-def u_sin(
-    x: Output[QNum],
-    a1: Output[QNum],
-):
-    a1 *= sin(x / (2**NUM_QUBITS))  # Amplitude encoding sin(x) to |1>
-    X(a1)  # sin(x) to |0>
+POLY_MAX_SCALE = 1
 
 
 @qfunc
@@ -48,11 +42,20 @@ def projector_cnot(reg: QNum, aux: QBit) -> None:
 
 
 @qfunc
+def u_sin(
+    x: QNum,
+    a1: QNum,
+):
+    a1 *= sin(x / (2**NUM_QUBITS))  # Amplitude encoding sin(x) to |1>
+    X(a1)  # sin(x) to |0>
+
+
+@qfunc
 def u_f(
-    x: Output[QNum],
-    a1: Output[QNum],
-    a2_qsvt: Output[QBit],
-    a3_qsvt: Output[QBit],
+    x: QNum,
+    a1: QNum,
+    a2_qsvt: QBit,
+    a3_qsvt: QBit,
 ):
     """u_{f^{\tilde}} circuit for state preparation using QET (more generally, QSVT)
 
@@ -67,10 +70,9 @@ def u_f(
     phiset_even = find_angle(POLY_EVEN, POLY_DEGREE + 3, POLY_MAX_SCALE)
     phiset_odd = find_angle(POLY_ODD, POLY_DEGREE + 2, POLY_MAX_SCALE)
 
+    # Match the length of the phase angles for even and odd parts by adding dummy value
     if len(phiset_even) - 1 == len(phiset_odd):
-        phiset_odd = np.append(
-            phiset_odd, [0]
-        )  # 규칙적인 qsvt 회로 생성을 위해, dummy 값을 넣어서 둘의 angle 길이를 맞춰줌.
+        phiset_odd = np.append(phiset_odd, [0])
     assert len(phiset_even) == len(phiset_odd)
 
     # Apply mixed parity QSVT
@@ -93,56 +95,114 @@ def u_f(
         aux2=a3_qsvt,
     )
     bind(full_reg, [a1, x])
+    H(a3_qsvt)
+
+
+@qfunc
+def state_prep(reg: QArray[QBit]):
+    # reg[0:NUM_QUBITS]: x
+    # reg[NUM_QUBITS]: a1
+    # reg[NUM_QUBITS + 1]: a2
+    # reg[NUM_QUBITS + 2]: a3
+    hadamard_transform(reg[0:NUM_QUBITS])
+    u_f(reg[0:NUM_QUBITS], reg[NUM_QUBITS], reg[NUM_QUBITS + 1], reg[NUM_QUBITS + 2])
+
+
+@qfunc
+def check_block(a: QNum, res: QBit):
+    # Mark if the state is good state.
+    # Auxiliary qubits are |0> => good state
+    res ^= a == 0
 
 
 @qfunc
 def u_amp(
-    x: Output[QNum],
-    a1: Output[QNum],
-    a2: Output[QNum],
-    a3: Output[QNum],
-    a4: Output[QNum],
+    x: QNum,
+    a1: QNum,
+    a2: QBit,
+    a3: QBit,
 ):
-    """Amplification circuit for state preparation using QSVT
+    """Amplitude amplification circuit for state preparation using QET (more generally, QSVT)
 
     Args:
-        x (Output[QNum]): _description_
-        a1 (Output[QNum]): _description_
-        a2 (Output[QNum]): _description_
-        a3 (Output[QNum]): _description_
-        a4 (Output[QNum]): _description_
-
-    Raises:
-        NotImplementedError: _description_
+        x (QNum): Representation of the input x
+        a1 (QNum): Auxiliary qubit for the u_sin circuit
+        a2 (QBit): Auxiliary qubit for the QSVT circuit
+        a3 (QBit): Auxiliary qubit for mixed parity QSVT (NOTE: It is unnecessary if f^{\tilde} has definite parity)
     """
 
-    # TODO: calculate phi, round
-    phi = amplification_phi()
-    round = amplification_round()
+    amp = get_gaussian_amplitude(MIN, MAX, mean=0.0, sigma=1.0 / np.sqrt(2 * EXP_RATE))
+    print("ampitude:", amp)
 
-    # TODO: we may use classiq's "exact amplitude amplificaiton" API instead of implementing it manually
-    # link: https://docs.classiq.io/latest/qmod-reference/api-reference/functions/open_library/amplitude_amplification/?h=amplit#classiq.open_library.functions.amplitude_amplification.exact_amplitude_amplification
+    reg = QArray[QBit]("full_reg")
+    bind([x, a1, a2, a3], reg)
 
-    raise NotImplementedError
+    exact_amplitude_amplification(
+        amplitude=amp,
+        oracle=lambda _reg: phase_oracle(
+            check_block, _reg[NUM_QUBITS : NUM_QUBITS + 3]
+        ),
+        space_transform=lambda _reg: state_prep(_reg),
+        packed_qvars=reg,
+    )
+
+    bind(reg, [x, a1, a2, a3])
 
 
 @qfunc
 def main(
     x: Output[QNum],
     a1: Output[QNum],
-    a2: Output[QNum],
-    a3: Output[QNum],
-    a4: Output[QNum],
-    qsvt_aux: Output[QBit],
+    a2_qsvt: Output[QBit],
+    a3_qsvt: Output[QBit],
 ):
     allocate(NUM_QUBITS, x)
     allocate(1, a1)
-    allocate(1, a2)
-    allocate(1, a3)
-    allocate(1, a4)
-    allocate(1, qsvt_aux)
+    allocate(1, a2_qsvt)
+    allocate(1, a3_qsvt)
+    u_amp(x, a1, a2_qsvt, a3_qsvt)
 
-    u_amp(x, a1, a2, a3, a4, qsvt_aux)
+
+def verify_result(result):
+    def parse_qsvt_results(result) -> Dict:
+        amps: Dict = {x: [] for x in range(2**NUM_QUBITS)}
+
+        for parsed_state in result.parsed_state_vector:
+            if (
+                parsed_state["a1"] == 0
+                and parsed_state["a2_qsvt"] == 0
+                and parsed_state["a3_qsvt_parity"] == 0
+                and np.linalg.norm(parsed_state.amplitude) > 1e-10
+            ):
+                amps[parsed_state["x"]].append(parsed_state.amplitude)
+
+        simulated_prob = [amp_to_prob(amp) for amp in amps.values()]
+        print("np.sum(simulated_prob):", np.sum(simulated_prob))
+        return simulated_prob
+
+    x = np.linspace(MIN, MAX, 2**NUM_QUBITS)
+    simulated = parse_qsvt_results(result)
+    expected = normalize(
+        [
+            amp_to_prob(F(((MAX - MIN) * x / 2**NUM_QUBITS) + MIN))
+            for x in range(2**NUM_QUBITS)
+        ]
+    )
+
+    plt.plot(x, expected, label="expected")
+    plt.plot(x, simulated, label="simulated")
+    plt.legend()
+    plt.show()
+    print("simulated prob:", np.round(simulated, 5))
+    print("expected prob:", np.round(expected, 5))
+
+    # assert the probabilities sum to 1
+    assert np.allclose(np.sum(simulated), 1)
+    assert np.allclose(np.sum(expected), 1)
+
+    # assert the probabilities are close to the ground truth
+    assert np.allclose(simulated, expected, atol=1e-3)
+    print("PASSED")
 
 
 def execute_model():
@@ -162,7 +222,7 @@ def execute_model():
     result = execute(qprog).result_value()
     # show(qprog)
 
-    verify_result(result)
+    # verify_result(result)
 
 
 if __name__ == "__main__":

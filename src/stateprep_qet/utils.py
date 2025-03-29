@@ -1,12 +1,9 @@
 # Import relevant modules and methods.
 import numpy as np
-import pyqsp
 from pyqsp import angle_sequence, response
 from pyqsp.poly import polynomial_generators, PolyTaylorSeries
 from pyqsp.angle_sequence import QuantumSignalProcessingPhases
-from typing import Dict
 
-import math
 from scipy.stats import norm
 from scipy.integrate import quad
 
@@ -69,47 +66,12 @@ def compute_qsvt_phases(poly, degree, max_scale):
     return adjust_qsvt_conventions(phases, degree).tolist()
 
 
-def get_random_unitary(num_qubits, seed=4):
-    np.random.seed(seed)
-    X = np.random.rand(2**num_qubits, 2**num_qubits)
-    U, s, V = np.linalg.svd(X)
-
-    unitary = U @ V.T
-    A_dim = int(unitary.shape[0] / 2)
-    A = unitary[:A_dim, :A_dim]
-    print("A:", A)
-
-    # Assert unitary is indeed unitary
-    assert np.allclose(
-        unitary @ unitary.T, np.eye(unitary.shape[0]), rtol=1e-5, atol=1e-6
-    )
-    return unitary
-
-
 def normalize(list):
     return list / np.sum(list)
 
 
 def amp_to_prob(amplitude):
     return (np.linalg.norm(amplitude)) ** 2
-
-
-def verify(unitary: np.ndarray):
-    A_dim = int(unitary.shape[0] / 2)
-    A = unitary[:A_dim, :A_dim]
-    print("A:", A)
-
-    # Make sure the singular values for A are smaller than 1
-    assert not (np.linalg.svd(A)[1] > 1).sum()
-
-    # Verify U is indeed unitary
-    assert np.allclose(
-        unitary @ unitary.T, np.eye(unitary.shape[0]), rtol=1e-5, atol=1e-6
-    )
-
-    # Calculate the condition number
-    kappa = max(1 / np.linalg.svd(A)[1])
-    print("kappa:", kappa)
 
 
 def h(f, min, max):
@@ -189,14 +151,6 @@ def fidelity(state1, state2):
     return np.abs(np.dot(state1.conj().T, state2)) ** 2
 
 
-def amplification_phi():
-    raise NotImplementedError
-
-
-def amplification_round():
-    raise NotImplementedError
-
-
 def squared_gaussian_integral(a, b, mean=0.0, sigma=1.0):
     """
     Computes the integral of f(x)^2 from a to b,
@@ -211,38 +165,19 @@ def squared_gaussian_integral(a, b, mean=0.0, sigma=1.0):
     return result
 
 
-def get_Maximum(a, b, mean=0.0, sigma=1.0):
+def gaussian_max(a, b, mean=0.0, sigma=1.0):
     x1 = a
     x2 = b
-
     x3 = 0
-
     if a < mean and b > mean:
         x3 = mean
-
     else:
         x3 = a
-
     X = np.array([x1, x2, x3])
-
-    MAX = norm.pdf(X, mean, sigma)
-    # print(X)
-    # print(MAX)
-
-    MAX = max(MAX)
-
-    return MAX
+    return max(norm.pdf(X, mean, sigma))
 
 
-def get_Amplitude_Gaussian_Original(a, b, mean=0.0, sigma=1.0):
+def get_gaussian_amplitude(a, b, mean=0.0, sigma=1.0, factor=1.45):
     Numerator = np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
-    Denominator = np.sqrt((b - a)) * get_Maximum(a, b, mean, sigma)
-
-    return Numerator / (Denominator * 2)
-
-
-def get_Amplitude_Gaussian_Fixed(a, b, mean=0.0, sigma=1.0):
-    Numerator = np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
-    Denominator = np.sqrt((b - a)) * get_Maximum(a, b, mean, sigma)
-
-    return (Numerator / Denominator) * (1.45 / 2.0)
+    Denominator = np.sqrt((b - a)) * gaussian_max(a, b, mean, sigma)
+    return (Numerator / Denominator) * (factor / 2.0)

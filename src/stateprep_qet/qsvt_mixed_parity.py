@@ -11,22 +11,6 @@ def my_projector_controlled_phase(
     aux: QBit,
     aux2: QBit,
 ) -> None:
-    """
-    [Qmod Classiq-library function]
-
-    Assigns a phase to the entire subspace determined by the given projector. Corresponds to the operation:
-
-    $$
-    \\Pi_{\\phi} = (C_{\\Pi}NOT) e^{-i\frac{\\phi}{2}Z}(C_{\\Pi}NOT)
-    $$
-
-    Args:
-        phase: A rotation phase.
-        proj_cnot: Projector-controlled-not unitary that sets an auxilliary qubit to |1> when the state is in the projection.
-        qvar: The quantum variable to which the rotation applies, which resides in the entire block encoding space.
-        aux: A zero auxilliary qubit, used for the projector-controlled-phase rotation. Given as an inout so that qsvt can be used as a building-block in a larger algorithm.
-    """
-    # within_apply(lambda: proj_cnot(qvar, aux), lambda: RZ(phase_even, aux))
     within_apply(
         lambda: proj_cnot(qvar, aux),
         lambda: control(
@@ -70,7 +54,6 @@ def my_qsvt(
 ) -> None:
     print("phase_even_seq.len", phase_even_seq.len)
     print("phase_odd_seq.len", phase_odd_seq.len)
-    # assert phase_even_seq.len == phase_odd_seq.len
 
     H(aux)
     H(aux2)
@@ -112,4 +95,4 @@ def my_qsvt(
     )
 
     H(aux)
-    H(aux2)  # TODO: need this?
+    H(aux2)
