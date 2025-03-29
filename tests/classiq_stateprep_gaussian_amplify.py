@@ -6,6 +6,7 @@ from classiq import *
 from stateprep_qet.utils import (
     amp_to_prob,
     find_angle,
+    get_Amplitude_Gaussian_Fixed,
     h,
     h_hat,
     normalize,
@@ -116,6 +117,9 @@ def u_amp(
     a3: QBit,
 ):
     # amp = 0.5597575631451602
+    AMPLITUDE = get_Amplitude_Gaussian_Fixed(
+        MIN, MAX, mean=0.0, sigma=1.0 / np.sqrt(2 * EXP_RATE)
+    )
     print("amp:", AMPLITUDE)
 
     reg = QArray[QBit]("full_reg")

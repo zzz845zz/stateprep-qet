@@ -11,8 +11,6 @@ from scipy.stats import norm
 from scipy.integrate import quad
 
 
-
-
 def find_angle(func, polydeg, max_scale, encoding="amplitude"):
     """
     With PolyTaylorSeries class, compute Chebyshev interpolant to degree
@@ -199,12 +197,6 @@ def amplification_round():
     raise NotImplementedError
 
 
-
-
-
-
-
-
 def squared_gaussian_integral(a, b, mean=0.0, sigma=1.0):
     """
     Computes the integral of f(x)^2 from a to b,
@@ -213,43 +205,44 @@ def squared_gaussian_integral(a, b, mean=0.0, sigma=1.0):
     prefactor = 1 / (2 * np.pi * sigma**2)
 
     def integrand(x):
-        return prefactor * np.exp(-(x-mean)**2 / sigma**2)
+        return prefactor * np.exp(-((x - mean) ** 2) / sigma**2)
 
     result, _ = quad(integrand, a, b)
     return result
 
 
-def get_Maximum(a,b,mean=0.0,sigma=1.0):
-    x1=a
-    x2=b
+def get_Maximum(a, b, mean=0.0, sigma=1.0):
+    x1 = a
+    x2 = b
 
-    x3=0
+    x3 = 0
 
-    if(a<mean and b>mean):
-        x3=mean
-    
+    if a < mean and b > mean:
+        x3 = mean
+
     else:
-        x3=a
+        x3 = a
 
-    X=np.array([x1,x2,x3])
+    X = np.array([x1, x2, x3])
 
-    MAX=norm.pdf(X,mean,sigma)
-    #print(X)
-    #print(MAX)
+    MAX = norm.pdf(X, mean, sigma)
+    # print(X)
+    # print(MAX)
 
-    MAX=max(MAX)
+    MAX = max(MAX)
 
     return MAX
 
 
-def get_Amplitude_Gaussian_Original(a,b,mean=0.0,sigma=1.0):
-    Numerator=np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
-    Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean,sigma)
+def get_Amplitude_Gaussian_Original(a, b, mean=0.0, sigma=1.0):
+    Numerator = np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
+    Denominator = np.sqrt((b - a)) * get_Maximum(a, b, mean, sigma)
 
-    return Numerator/(Denominator*2)
+    return Numerator / (Denominator * 2)
 
-def get_Amplitude_Gaussian_Fixed(a,b,mean=0.0,sigma=1.0):
-    Numerator=np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
-    Denominator=np.sqrt((b-a))*get_Maximum(a,b,mean,sigma)
 
-    return (Numerator/Denominator)*(1.444/2.0)
+def get_Amplitude_Gaussian_Fixed(a, b, mean=0.0, sigma=1.0):
+    Numerator = np.sqrt(squared_gaussian_integral(a, b, mean, sigma))
+    Denominator = np.sqrt((b - a)) * get_Maximum(a, b, mean, sigma)
+
+    return (Numerator / Denominator) * (1.45 / 2.0)
