@@ -117,9 +117,9 @@ def u_amp(
     a3: QBit,
 ):
     # amp = 0.5597575631451602
-    AMPLITUDE = get_gaussian_amplitude(
-        MIN, MAX, mean=0.0, sigma=1.0 / np.sqrt(2 * EXP_RATE)
-    )
+    # AMPLITUDE = get_gaussian_amplitude(
+    #     MIN, MAX, mean=0.0, sigma=1.0 / np.sqrt(2 * EXP_RATE)
+    # )
     print("amp:", AMPLITUDE)
 
     reg = QArray[QBit]("full_reg")
