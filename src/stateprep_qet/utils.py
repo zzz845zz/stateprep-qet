@@ -3,7 +3,7 @@ import numpy as np
 from pyqsp import angle_sequence, response
 from pyqsp.poly import polynomial_generators, PolyTaylorSeries
 from pyqsp.angle_sequence import QuantumSignalProcessingPhases
-
+from classiq import QuantumProgram
 from scipy.stats import norm
 from scipy.integrate import quad
 
@@ -95,60 +95,75 @@ def h_hat(h, h_max):
     return lambda y: h(y) / h_max
 
 
-def discretized_l2_norm(f, N, min, max):
+def get_metrics(qprog):
     """
-    Compute the discretized L2-norm of the function f over the interval [a, b] with N points.
+    Extract circuit metrics from a quantum program.
 
-    Eq. (6) in https://arxiv.org/pdf/2210.14892
-
-    Args:
-        f (function): The function to evaluate.
-        N (int): The number of discretization points.
-        min (float): The start of the interval.
-        max (float): The end of the interval.
+    Parameters:
+        qprog: The quantum program object.
 
     Returns:
-        float: The discretized L2-norm of the function.
+        dict: A dictionary containing the circuit metrics:
+              - "depth": Circuit depth.
+              - "width": Circuit width (number of qubits used).
+              - "cx_count": Number of CX gates (returns 0 if none are present).
     """
-    x = np.linspace(min, max, N)
-    f_values = f(x)
-    l2_norm = np.sqrt((max - min) / N * np.sum(np.abs(f_values) ** 2))
-    return l2_norm
+    # Generate the optimized quantum circuit
+    circuit = QuantumProgram.from_qprog(qprog)
+
+    # Extract metrics
+    metrics = {
+        "depth": circuit.transpiled_circuit.depth,
+        "width": circuit.data.width,
+        "cx_count": circuit.transpiled_circuit.count_ops.get(
+            "cx", 0
+        ),  # Default to 0 if 'cx' not found
+    }
+
+    return metrics
 
 
-def l2_norm_filling_fraction(f, N, min, max):
-    """
-    Compute the L2-norm filling-fraction of the function f over the interval [a, b] with N points.
+# def discretized_l2_norm(f, N, min, max):
+#     """
+#     Compute the discretized L2-norm of the function f over the interval [a, b] with N points.
 
-    Eq. (7) in https://arxiv.org/pdf/2210.14892
+#     Eq. (6) in https://arxiv.org/pdf/2210.14892
 
-    Args:
-        f (function): The function to evaluate.
-        N (int): The number of discretization points.
-        min (float): The start of the interval.
-        max (float): The end of the interval.
+#     Args:
+#         f (function): The function to evaluate.
+#         N (int): The number of discretization points.
+#         min (float): The start of the interval.
+#         max (float): The end of the interval.
 
-    Returns:
-        float: The L2-norm filling-fraction of the function.
-    """
-    l2_norm_discretized = discretized_l2_norm(f, N, min, max)
-    f_max = np.max(np.abs(f(np.linspace(min, max, N))))
-    # l2_norm_continuous = np.sqrt(np.trapz(np.abs(f(np.linspace(a, b, 1000))) ** 2, np.linspace(a, b, 1000)))
-    filling_fraction = l2_norm_discretized / np.sqrt((max - min) * f_max**2)
-    return filling_fraction
+#     Returns:
+#         float: The discretized L2-norm of the function.
+#     """
+#     x = np.linspace(min, max, N)
+#     f_values = f(x)
+#     l2_norm = np.sqrt((max - min) / N * np.sum(np.abs(f_values) ** 2))
+#     return l2_norm
 
 
-def fidelity(state1, state2):
-    """Compute the fidelity between two states.
+# def l2_norm_filling_fraction(f, N, min, max):
+#     """
+#     Compute the L2-norm filling-fraction of the function f over the interval [a, b] with N points.
 
-    Args:
-        state1 (np.ndarray): list of amplitudes of state 1
-        state2 (np.ndarray): list of amplitudes of state 2
+#     Eq. (7) in https://arxiv.org/pdf/2210.14892
 
-    Returns:
-        float: fidelity between state
-    """
-    return np.abs(np.dot(state1.conj().T, state2)) ** 2
+#     Args:
+#         f (function): The function to evaluate.
+#         N (int): The number of discretization points.
+#         min (float): The start of the interval.
+#         max (float): The end of the interval.
+
+#     Returns:
+#         float: The L2-norm filling-fraction of the function.
+#     """
+#     l2_norm_discretized = discretized_l2_norm(f, N, min, max)
+#     f_max = np.max(np.abs(f(np.linspace(min, max, N))))
+#     # l2_norm_continuous = np.sqrt(np.trapz(np.abs(f(np.linspace(a, b, 1000))) ** 2, np.linspace(a, b, 1000)))
+#     filling_fraction = l2_norm_discretized / np.sqrt((max - min) * f_max**2)
+#     return filling_fraction
 
 
 def squared_gaussian_integral(a, b, mean=0.0, sigma=1.0):

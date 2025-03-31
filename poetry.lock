@@ -379,13 +379,13 @@ files = [
 
 [[package]]
 name = "classiq"
-version = "0.72.1"
+version = "0.73.0"
 description = "Classiq's Python SDK for quantum computing"
 optional = false
 python-versions = "<3.13,>=3.9"
 groups = ["main"]
 files = [
-    {file = "classiq-0.72.1-py3-none-any.whl", hash = "sha256:fe561a82b8236712a840a314eb87d29a2da9610046942c9a15c58b1581bc566c"},
+    {file = "classiq-0.73.0-py3-none-any.whl", hash = "sha256:0d1e6940c1f6240cb5509e3bbe76e8188c73ea89b111267d0aeff5a16f50079b"},
 ]
 
 [package.dependencies]
@@ -2646,4 +2646,4 @@ test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12, <3.13"
-content-hash = "c4baaafad9b2f48382d8ce26736c6d70bc526ff45087df369a6249373dadc382"
+content-hash = "08130f8a19eeeecabc065f054cc71a4cbaca19b7c6108615bca9cff670a38a7d"
