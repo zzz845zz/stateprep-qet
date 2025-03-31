@@ -6,7 +6,7 @@ from stateprep_qet.utils import amp_to_prob, find_angle, normalize
 from classiq.execution import ClassiqBackendPreferences, ExecutionPreferences
 from classiq.qmod.symbolic import sin, cos
 
-NUM_QUBITS = 3  # U is applied to these qubits
+NUM_QUBITS = 4  # U is applied to these qubits
 POLY_DEGREE = 5
 POLY_FUNC = lambda x: x
 POLY_MAX_SCALE = 1
@@ -18,9 +18,14 @@ def projector_cnot(reg: QNum, aux: QBit) -> None:
 
 
 @qfunc
-def u_sin(x: QNum, a: QNum) -> None:
-    a *= sin(x / (2**NUM_QUBITS))  # Amplitude encoding sin(x) to |1>
-    X(a)  # sin(x) to |0>
+def u_sin(x: QArray[QBit], a: QNum) -> None:
+    repeat(
+        count=NUM_QUBITS,
+        iteration=lambda i: CRY(theta=2 ** (-NUM_QUBITS + i + 1), ctrl=x[i], target=a),
+    )
+    X(a)
+    # a *= sin(x / (2**NUM_QUBITS))  # Amplitude encoding sin(x) to |1>
+    # X(a)  # sin(x) to |0>
 
 
 @qfunc
@@ -33,24 +38,25 @@ def main(x: Output[QNum], ind: Output[QNum], aux: Output[QBit]):
     hadamard_transform(x)
 
     # Apply QSVT
-    phiset = find_angle(POLY_FUNC, POLY_DEGREE, POLY_MAX_SCALE)
-    full_reg = QArray[QBit]("full_reg")
-    bind([ind, x], full_reg)
-    qsvt(
-        phase_seq=phiset,
-        proj_cnot_1=lambda reg, aux: projector_cnot(
-            reg[0], aux
-        ),  # reg==0 representing "from state". If the state is "from state", then mark aux qubit as |1>
-        proj_cnot_2=lambda reg, aux: projector_cnot(
-            reg[0], aux
-        ),  # reg==0 representing "to state". If the state is "to state", then mark aux qubit as |1>
-        u=lambda reg: u_sin(
-            reg[1 : reg.len], reg[0]
-        ),  # reg[1:reg.len] is "x" and reg[0] is "a"
-        qvar=full_reg,
-        aux=aux,
-    )
-    bind(full_reg, [ind, x])
+    # phiset = find_angle(POLY_FUNC, POLY_DEGREE, POLY_MAX_SCALE)
+    # full_reg = QArray[QBit]("full_reg")
+    # bind([ind, x], full_reg)
+    # qsvt(
+    #     phase_seq=phiset,
+    #     proj_cnot_1=lambda reg, aux: projector_cnot(
+    #         reg[0], aux
+    #     ),  # reg==0 representing "from state". If the state is "from state", then mark aux qubit as |1>
+    #     proj_cnot_2=lambda reg, aux: projector_cnot(
+    #         reg[0], aux
+    #     ),  # reg==0 representing "to state". If the state is "to state", then mark aux qubit as |1>
+    #     u=lambda reg: u_sin(
+    #         reg[1 : reg.len], reg[0]
+    #     ),  # reg[1:reg.len] is "x" and reg[0] is "a"
+    #     qvar=full_reg,
+    #     aux=aux,
+    # )
+    u_sin(x, ind)
+    # bind(full_reg, [ind, x])
 
 
 def parse_qsvt_results(result) -> Dict:
